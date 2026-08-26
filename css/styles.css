@@ -1388,6 +1388,32 @@ kbd {
   .campo-busca { flex: 1; min-width: 220px; }
 }
 
+/* No celular a aba Hoje é a tela mais usada: os botões descem para baixo do
+   conteúdo em vez de espremer a linha. */
+@media (max-width: 700px) {
+  .hoje { padding: 12px; }
+  .hoje-linha { flex-wrap: wrap; gap: 10px; }
+  .hoje-corpo { flex: 1 1 auto; }
+  .hoje-acoes {
+    flex: 1 0 100%;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px dashed var(--borda);
+  }
+  .hoje-acoes .btn { padding: 9px 14px; }
+  .hoje-bloco { padding-left: 10px; }
+  .conflito-lados { grid-template-columns: 1fr; }
+  .adiar-atalhos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .importacao-resumo { grid-template-columns: 1fr; }
+  .etapa-linha { grid-template-columns: auto auto 1fr auto; row-gap: 8px; }
+  .etapa-retomada { grid-column: 3 / -1; max-width: none; }
+  .historico-item { grid-template-columns: 72px 1fr auto; }
+  .historico-canal { grid-row: 1; }
+  .historico-nota { grid-column: 1 / -1; }
+  .modal { padding: 16px; }
+  .cofre-caixa { padding: 24px 18px; }
+}
+
 @media (max-width: 860px) {
   .topo { flex-direction: column; align-items: stretch; gap: 12px; }
   .topo-acoes { flex-wrap: wrap; }
