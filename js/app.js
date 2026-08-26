@@ -603,6 +603,34 @@ const App = (function () {
 
   // -------------------------------------------------- registrar contato feito
 
+  /** Histórico curto mostrado dentro do registro, para você lembrar do que já
+      foi conversado antes de anotar a conversa de agora. */
+  function historicoResumoHTML(lead, indiceEmEdicao) {
+    const total = lead.contatos.length;
+    if (!total) {
+      return '<div class="historico historico-vazio">' +
+        UI.ICONES.historico + '<span>Primeiro contato registrado com essa pessoa.</span></div>';
+    }
+
+    const itens = lead.contatos.slice(0, 6).map(function (c, i) {
+      return '<li class="historico-item' + (i === indiceEmEdicao ? ' historico-editando' : '') + '">' +
+        '<span class="historico-data">' + UI.data(c.data) + '</span>' +
+        '<span class="historico-canal">' + UI.esc(c.canal) + '</span>' +
+        '<span class="historico-nota">' + (c.nota ? UI.esc(c.nota) : '<i>sem anotação</i>') + '</span>' +
+      '</li>';
+    }).join('');
+
+    return '<div class="historico historico-compacto">' +
+      '<div class="historico-topo">' +
+        '<h3>' + UI.ICONES.historico + 'O que já rolou</h3>' +
+        '<span>' + total + (total === 1 ? ' contato' : ' contatos') +
+          ' · o último ' + UI.textoHa(DB.diasDesdeUltimoContato(lead)) +
+          (total > 6 ? ' · mostrando os 6 mais recentes' : '') + '</span>' +
+      '</div>' +
+      '<ul class="historico-lista">' + itens + '</ul>' +
+    '</div>';
+  }
+
   /** "Falei hoje": guarda o contato no histórico e já agenda o próximo toque.
       Passando `indice`, a mesma tela serve para corrigir um registro antigo. */
   function abrirRegistro(id, voltarParaDetalhes, canalSugerido, indice) {
@@ -629,6 +657,8 @@ const App = (function () {
           '<button type="button" class="icone-btn" data-fechar title="Fechar">' + UI.ICONES.fechar + '</button>' +
         '</header>' +
 
+        historicoResumoHTML(lead, corrigindo ? indice : -1) +
+
         '<div class="form-grade">' +
           '<label class="campo"><span>Quando</span>' +
             '<input type="date" name="data" value="' + UI.esc(corrigindo ? registro.data : DB.hoje()) +
@@ -640,7 +670,14 @@ const App = (function () {
           '</select></label>' +
           '<label class="campo campo-largo"><span>O que ficou combinado</span>' +
             '<textarea name="nota" rows="3" placeholder="Resumo em uma linha: o que rolou e o que ficou de fazer." ' +
-                      'data-foco>' + UI.esc(corrigindo ? registro.nota : '') + '</textarea></label>' +
+                      'data-foco>' + UI.esc(corrigindo ? registro.nota : '') + '</textarea>' +
+            '<small class="ajuda">Vira uma linha do histórico, com a data de hoje.</small></label>' +
+
+          '<label class="campo campo-largo"><span>Observações sobre ' + UI.esc(primeiroNome) + '</span>' +
+            '<textarea name="observacoes" rows="3" placeholder="O que vale lembrar sempre: contexto, ' +
+                      'preferências, quem indicou.">' + UI.esc(lead.observacoes) + '</textarea>' +
+            '<small class="ajuda">Anotação fixa da ficha — não entra no histórico. ' +
+              'Edite aqui e ela é salva junto.</small></label>' +
           '<label class="campo"><span>Próximo contato</span>' +
             '<input type="date" name="proximoContato" value="' + UI.esc(proximaSugerida) + '">' +
             '<small class="ajuda">' + (corrigindo
@@ -671,7 +708,8 @@ const App = (function () {
             canal: dados.canal,
             nota: dados.nota
           });
-          DB.atualizar(id, { proximoContato: dados.proximoContato });
+          DB.atualizar(id, { proximoContato: dados.proximoContato,
+                             observacoes: dados.observacoes });
           UI.toast('Registro corrigido.');
         } else {
           DB.registrarContato(id, {
@@ -680,6 +718,9 @@ const App = (function () {
             nota: dados.nota,
             proximoContato: dados.proximoContato
           });
+          if (dados.observacoes !== lead.observacoes) {
+            DB.atualizar(id, { observacoes: dados.observacoes });
+          }
           UI.toast('Contato registrado' +
             (dados.proximoContato ? ' — próximo em ' + UI.data(dados.proximoContato) + '.' : '.'));
         }
