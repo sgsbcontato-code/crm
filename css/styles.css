@@ -1135,6 +1135,30 @@ kbd {
 .historico-item:hover .icone-btn { opacity: 1; }
 .historico-item:focus-within .icone-btn { opacity: 1; }
 
+/* histórico resumido dentro da tela de registrar contato */
+.historico-compacto { margin-bottom: 16px; }
+.historico-compacto .historico-lista { max-height: 168px; overflow-y: auto; }
+.historico-compacto .historico-item {
+  grid-template-columns: 78px 78px 1fr;
+  padding: 6px 0;
+  font-size: 12px;
+}
+.historico-compacto .historico-canal { font-size: 10.5px; padding: 1px 6px; }
+.historico-editando {
+  background: #FDF3E0;
+  border-radius: 8px;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+}
+
+.historico-vazio {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 16px;
+  font-size: 12.5px;
+  color: var(--texto-suave);
+}
+.historico-vazio svg { flex: none; opacity: .7; }
+
 /* registrar contato / mensagens */
 .opcao-linha {
   display: flex; align-items: center; gap: 9px;
