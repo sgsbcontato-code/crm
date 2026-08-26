@@ -42,9 +42,7 @@ const NuvemUI = (function () {
   function telaEntrar(aoAbrir) {
     const tela = Cofre.telaBase(
       '<span class="cofre-icone">' + Cofre.CADEADO + '</span>' +
-      '<h1>CRM na nuvem</h1>' +
-      '<p class="cofre-texto">Digite sua senha para baixar e abrir os contatos de ' +
-        '<b>' + UI.esc(Nuvem.onde() || '') + '</b>.</p>' +
+      '<h1>CRM</h1>' +
       '<form class="cofre-form">' +
         '<input type="password" name="senha" placeholder="Sua senha" ' +
                'autocomplete="current-password" autofocus required>' +
@@ -54,9 +52,7 @@ const NuvemUI = (function () {
       '<div id="cofre-extra" hidden>' +
         '<button type="button" class="btn btn-fantasma cofre-backup" data-offline>' +
           'Seguir com a cópia deste computador</button>' +
-      '</div>' +
-      '<p class="cofre-rodape">Os dados viajam criptografados: o GitHub guarda um bloco ' +
-        'embaralhado que só a sua senha abre.</p>'
+      '</div>'
     );
 
     const form = tela.querySelector('form');
