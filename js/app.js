@@ -14,7 +14,8 @@ const App = (function () {
     uf: '',
     cidade: '',
     cobranca: '',   // '' | 'atrasado' (passou da hora) | 'atencao' (é hoje)
-    ordem: { campo: 'dataCriacao', dir: 'desc' }
+    // Começa pelo que pede atenção: quem está mais perto (ou já passou) da hora de falar
+    ordem: { campo: 'proximoContato', dir: 'asc' }
   };
 
   const els = {}; // referências do DOM, preenchidas em `iniciar`
@@ -52,6 +53,15 @@ const App = (function () {
       let r;
       if (campo === 'dataCriacao') {
         r = String(a[campo]).localeCompare(String(b[campo])); // ISO ordena como texto
+      } else if (campo === 'proximoContato') {
+        /* Urgência real: a data combinada ou, sem ela, o prazo da etapa.
+           Quem não tem prazo nenhum fica sempre no fim, nos dois sentidos. */
+        const ua = DB.diasParaCobranca(a);
+        const ub = DB.diasParaCobranca(b);
+        if (ua === null && ub === null) r = 0;
+        else if (ua === null) return 1;
+        else if (ub === null) return -1;
+        else r = ua - ub;
       } else if (campo === 'etapaDesde') {
         r = DB.diasNaEtapa(a) - DB.diasNaEtapa(b);            // ordena pelos dias parados
       } else if (campo === 'etapa') {
@@ -796,9 +806,7 @@ const App = (function () {
     { rotulo: 'Amanhã',    dias: 1 },
     { rotulo: '+7 dias',   dias: 7 },
     { rotulo: '+15 dias',  dias: 15 },
-    { rotulo: '+30 dias',  dias: 30 },
-    { rotulo: '+90 dias',  dias: 90 },
-    { rotulo: '+6 meses',  dias: 180 }
+    { rotulo: '+30 dias',  dias: 30 }
   ];
 
   /** Agenda (ou remove) a data de retomada do contato.
@@ -813,7 +821,7 @@ const App = (function () {
         (DB.diasParaContato(lead) < 0
           ? 'passou há ' + UI.textoDias(-DB.diasParaContato(lead))
           : (DB.diasParaContato(lead) === 0 ? 'é hoje' : 'em ' + UI.textoDias(DB.diasParaContato(lead)))) + ').'
-      : 'Sem data combinada — vale o prazo da etapa <b>' + UI.esc(lead.etapa) + '</b> (' +
+      : 'Sem data combinada — vale o prazo da etapa <b>' + UI.esc(DB.nomeEtapa(lead.etapa)) + '</b> (' +
         (DB.prazoDe(lead.etapa) ? UI.textoDias(DB.prazoDe(lead.etapa)) : 'sem prazo') + ').';
 
     const html =
@@ -832,9 +840,18 @@ const App = (function () {
           }).join('') +
         '</div>' +
 
-        '<label class="campo campo-largo"><span>Ou escolha a data</span>' +
-          '<input type="date" name="proximoContato" value="' + UI.esc(lead.proximoContato) + '" ' +
-                 'min="' + DB.hoje() + '" data-foco></label>' +
+        '<div class="form-grade adiar-campos">' +
+          '<label class="campo"><span>Daqui a quantos dias</span>' +
+            '<span class="campo-dias">' +
+              '<input type="number" name="dias" min="0" max="3650" step="1" inputmode="numeric" ' +
+                     'placeholder="ex.: 45" data-foco>' +
+              '<small>dias</small>' +
+            '</span></label>' +
+          '<label class="campo"><span>Ou escolha a data</span>' +
+            '<input type="date" name="proximoContato" value="' + UI.esc(lead.proximoContato) + '" ' +
+                   'min="' + DB.hoje() + '"></label>' +
+        '</div>' +
+        '<p class="adiar-previa" id="adiar-previa">&nbsp;</p>' +
 
         '<footer class="modal-acoes">' +
           (agendado ? '<button type="button" class="btn btn-fantasma" data-limpar>Remover data</button>' : '') +
@@ -846,6 +863,45 @@ const App = (function () {
 
     UI.abrirModal(html, function (caixa) {
       const campoData = caixa.querySelector('input[name="proximoContato"]');
+      const campoDias = caixa.querySelector('input[name="dias"]');
+      const previa = caixa.querySelector('#adiar-previa');
+
+      /* Os dois campos andam juntos: digitar os dias preenche a data, e
+         escolher a data mostra quantos dias faltam. */
+      function mostrarPrevia() {
+        if (!campoData.value) { previa.innerHTML = '&nbsp;'; return; }
+        const p = campoData.value.split('-');
+        const semana = new Date(+p[0], +p[1] - 1, +p[2], 12)
+          .toLocaleDateString('pt-BR', { weekday: 'long' });
+        const faltam = DB.diasEntre(DB.hoje(), campoData.value);
+        previa.innerHTML = 'Retomar <b>' + UI.esc(semana) + ', ' + UI.data(campoData.value) + '</b>' +
+          (faltam > 0 ? ' · daqui a ' + UI.textoDias(faltam) : (faltam === 0 ? ' · hoje' : ''));
+      }
+
+      campoDias.addEventListener('input', function () {
+        const n = parseInt(campoDias.value, 10);
+        if (isFinite(n) && n >= 0) campoData.value = DB.somarDias(DB.hoje(), n);
+        mostrarPrevia();
+      });
+
+      campoData.addEventListener('input', function () {
+        const faltam = campoData.value ? DB.diasEntre(DB.hoje(), campoData.value) : NaN;
+        campoDias.value = isFinite(faltam) && faltam >= 0 ? faltam : '';
+        mostrarPrevia();
+      });
+
+      [campoDias, campoData].forEach(function (campo) {
+        campo.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter') { ev.preventDefault(); caixa.querySelector('[data-salvar]').click(); }
+        });
+      });
+
+      // Já tinha data combinada: mostra os dias que faltam
+      if (lead.proximoContato) {
+        const faltam = DB.diasEntre(DB.hoje(), lead.proximoContato);
+        if (faltam >= 0) campoDias.value = faltam;
+        mostrarPrevia();
+      }
 
       function concluir(mensagem) {
         UI.fecharModal();
@@ -862,7 +918,11 @@ const App = (function () {
       });
 
       caixa.querySelector('[data-salvar]').addEventListener('click', function () {
-        if (!campoData.value) { UI.toast('Escolha uma data ou use um dos atalhos.', 'aviso'); return; }
+        if (!campoData.value) {
+          UI.toast('Digite os dias, escolha a data ou use um dos atalhos.', 'aviso');
+          campoDias.focus();
+          return;
+        }
         DB.atualizar(id, { proximoContato: campoData.value });
         concluir('Contato agendado para ' + UI.data(campoData.value) + '.');
       });
