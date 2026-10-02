@@ -12,22 +12,41 @@ const Importar = (function () {
   /* Cada campo do lead e os cabeçalhos que apontam para ele. Comparação feita
      sem acento e em minúsculas. */
   const COLUNAS = {
-    nome:            ['nome', 'contato', 'nome completo', 'nome do contato', 'cliente'],
-    email:           ['e-mail', 'email', 'e mail', 'correio'],
-    telefone:        ['telefone', 'celular', 'fone', 'whatsapp', 'telefone 1', 'tel'],
-    cargo:           ['cargo', 'funcao', 'posicao'],
+    nome:            ['nome', 'contato', 'nome completo', 'nome do contato', 'cliente',
+                      'name', 'full name', 'display name', 'file as'],
+    email:           ['e-mail', 'email', 'e mail', 'correio',
+                      'e-mail 1 - value', 'email 1 - value', 'e-mail address', 'email address'],
+    telefone:        ['telefone', 'celular', 'fone', 'whatsapp', 'telefone 1', 'tel',
+                      'numero de telefone', 'phone 1 - value', 'phone', 'mobile', 'mobile phone'],
+    cargo:           ['cargo', 'funcao', 'posicao',
+                      'organization title', 'organization 1 - title', 'job title'],
     empresa:         ['empresa', 'origem', 'empresa/origem', 'empresa / origem',
-                      'orgao', 'instituicao', 'organizacao'],
-    cidade:          ['cidade', 'municipio', 'localidade'],
-    uf:              ['uf', 'estado', 'sigla'],
+                      'orgao', 'instituicao', 'organizacao',
+                      'organization name', 'organization 1 - name', 'company'],
+    cidade:          ['cidade', 'municipio', 'localidade', 'address 1 - city', 'city'],
+    uf:              ['uf', 'estado', 'sigla', 'address 1 - region', 'region', 'state'],
     etapa:           ['etapa', 'etapa do funil', 'funil', 'status', 'situacao no funil'],
-    observacoes:     ['observacoes', 'observacao', 'notas', 'nota', 'obs', 'comentarios'],
+    observacoes:     ['observacoes', 'observacao', 'notas', 'nota', 'obs', 'comentarios', 'notes'],
     dataCriacao:     ['data de criacao', 'data criacao', 'criado em', 'data', 'cadastro'],
     proximoContato:  ['proximo contato', 'retorno', 'proximo retorno'],
-    aniversario:     ['aniversario', 'data de nascimento', 'nascimento', 'aniversario do contato'],
+    aniversario:     ['aniversario', 'data de nascimento', 'nascimento',
+                      'aniversario do contato', 'birthday'],
     dataEspecial:    ['data especial', 'data comemorativa'],
-    dataEspecialNome:['o que e a data', 'nome da data especial']
+    dataEspecialNome:['o que e a data', 'nome da data especial'],
+
+    /* O Google exporta o nome em duas colunas e não tem uma coluna "Nome".
+       Estas duas são juntadas em `nome` quando não existe coluna única. */
+    _primeiroNome:   ['first name', 'given name', 'primeiro nome'],
+    _sobrenome:      ['last name', 'family name', 'surname', 'sobrenome']
   };
+
+  /* Campos auxiliares: existem só para montar outros, não viram coluna do lead. */
+  const AUXILIARES = ['_primeiroNome', '_sobrenome'];
+
+  /* O Google junta vários valores no mesmo campo com " ::: ". Fica o primeiro. */
+  function primeiroValor(texto) {
+    return String(texto || '').split(':::')[0].trim();
+  }
 
   function chave(texto) {
     return String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -99,6 +118,10 @@ const Importar = (function () {
   function paraData(valor) {
     const t = String(valor || '').trim();
     if (!t) return '';
+    /* Aniversário sem ano, como o Google exporta ("--03-12"): o app só usa dia
+       e mês, então completo com o ano corrente para a data ficar legível. */
+    const semAno = t.match(/^--(\d{2})-(\d{2})$/);
+    if (semAno) return new Date().getFullYear() + '-' + semAno[1] + '-' + semAno[2];
     let m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (m) return m[1] + '-' + m[2] + '-' + m[3];
     m = t.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/);
@@ -139,9 +162,10 @@ const Importar = (function () {
 
     const cabecalho = linhas[0];
     const info = mapear(cabecalho);
-    if (!Object.keys(info.mapa).some(function (i) { return info.mapa[i] === 'nome'; })) {
-      return { ok: false, erro: 'Não encontrei uma coluna de nome. ' +
-                                'A planilha precisa de uma coluna chamada "Nome".' };
+    const campos = Object.keys(info.mapa).map(function (i) { return info.mapa[i]; });
+    if (campos.indexOf('nome') === -1 && campos.indexOf('_primeiroNome') === -1) {
+      return { ok: false, erro: 'Não encontrei uma coluna de nome. A planilha precisa de ' +
+                                '"Nome" — ou de "First Name", como o Google exporta.' };
     }
 
     // Telefones e e-mails que já existem, para não duplicar contato
@@ -161,6 +185,17 @@ const Importar = (function () {
       Object.keys(info.mapa).forEach(function (i) {
         lead[info.mapa[i]] = String(linha[i] == null ? '' : linha[i]).trim();
       });
+
+      // Google: "First Name" + "Last Name" viram um nome só
+      if (!lead.nome) {
+        lead.nome = [lead._primeiroNome, lead._sobrenome]
+          .filter(Boolean).join(' ').trim();
+      }
+      AUXILIARES.forEach(function (campo) { delete lead[campo]; });
+
+      lead.telefone = primeiroValor(lead.telefone);
+      lead.email = primeiroValor(lead.email);
+      lead.empresa = primeiroValor(lead.empresa);
 
       if (!lead.nome) { semNome.push(n + 2); return; }
 

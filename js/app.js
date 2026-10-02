@@ -942,6 +942,7 @@ const App = (function () {
     const campos = {
       nome: 'Nome', email: 'E-mail', telefone: 'Telefone', cargo: 'Cargo',
       empresa: 'Empresa/origem', cidade: 'Cidade', uf: 'UF', etapa: 'Etapa',
+      _primeiroNome: 'Nome (primeiro)', _sobrenome: 'Nome (sobrenome)',
       observacoes: 'Observações', dataCriacao: 'Data de criação',
       proximoContato: 'Próximo contato', aniversario: 'Aniversário',
       dataEspecial: 'Data especial', dataEspecialNome: 'Nome da data'
