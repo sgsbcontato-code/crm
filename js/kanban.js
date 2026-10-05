@@ -13,7 +13,8 @@ const Kanban = (function () {
   function card(lead) {
     const etapa = DB.etapa(lead.etapa);
     const linhaEmpresa = lead.empresa
-      ? '<span class="card-linha">' + UI.ICONES.predio + UI.esc(lead.empresa) + '</span>' : '';
+      ? '<span class="card-linha" title="' + UI.esc(lead.empresa) + '">' +
+        UI.ICONES.predio + UI.esc(lead.empresa) + '</span>' : '';
     const local = [lead.cidade, lead.uf].filter(Boolean).join(' / ');
     const linhaLocal = local
       ? '<span class="card-linha">' + UI.ICONES.pin + UI.esc(local) + '</span>' : '';
@@ -27,7 +28,8 @@ const Kanban = (function () {
           '<span class="avatar" style="background:' + etapa.fundo + ';color:' + etapa.cor + '">' +
             UI.esc(UI.iniciais(lead.nome)) + '</span>' +
           '<div class="card-identidade">' +
-            '<strong>' + UI.esc(lead.nome || 'Sem nome') + '</strong>' +
+            '<strong title="' + UI.esc(lead.nome || 'Sem nome') + '">' +
+              UI.esc(lead.nome || 'Sem nome') + '</strong>' +
             (lead.cargo ? '<span>' + UI.esc(lead.cargo) + '</span>' : '') +
           '</div>' +
           (Zap.temWhatsApp(lead)
