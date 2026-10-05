@@ -21,7 +21,11 @@ const Zap = (function () {
     if (!d) return { ok: false, motivo: 'sem telefone' };
 
     // Tira o DDI, se o número já vier com ele
-    if (d.length > 11 && d.indexOf(DDI) === 0) d = d.slice(DDI.length);
+    let comDDI = false;
+    if (d.length > 11 && d.indexOf(DDI) === 0) {
+      d = d.slice(DDI.length);
+      comDDI = true;
+    }
 
     if (d.length === 11) {
       // DDD + 9 dígitos: celular
@@ -29,6 +33,11 @@ const Zap = (function () {
     }
 
     if (d.length === 10) {
+      // Se o número foi anotado com o DDI, ele veio de uma fonte que já sabe o
+      // formato da conta (a própria lista do WhatsApp, por exemplo): conta antiga
+      // ficou sem o nono dígito e fixo pode ter WhatsApp Business. Usar como está.
+      if (comDDI) return { ok: true, numero: DDI + d, ajustado: false };
+
       const primeiro = d.charAt(2);
       if (primeiro >= '6') {
         // Celular antigo, sem o nono dígito — a numeração ganhou o 9 em todo o país
