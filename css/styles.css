@@ -722,7 +722,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-size: 13.5px;
   line-height: 1.3;
   white-space: normal;
-  overflow-wrap: anywhere;
+  /* break-word (e não "anywhere"): palavra que não cabe desce inteira para a
+     linha de baixo em vez de ser partida no meio ("Henriqu / e Comunicação"). */
+  overflow-wrap: break-word;
 }
 .card-identidade strong::before {
   content: '';
