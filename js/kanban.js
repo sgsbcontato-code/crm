@@ -24,9 +24,10 @@ const Kanban = (function () {
 
     return '' +
       '<article class="card" draggable="true" data-id="' + lead.id + '" style="--cor:' + etapa.cor + '">' +
+        /* Sem avatar aqui: na coluna estreita do Kanban as iniciais comiam 38px da
+           largura do nome, que é o que realmente se lê. A cor da etapa continua na
+           borda esquerda do card. O avatar segue nas outras telas. */
         '<header class="card-topo">' +
-          '<span class="avatar" style="background:' + etapa.fundo + ';color:' + etapa.cor + '">' +
-            UI.esc(UI.iniciais(lead.nome)) + '</span>' +
           '<div class="card-identidade">' +
             '<strong title="' + UI.esc(lead.nome || 'Sem nome') + '">' +
               UI.esc(lead.nome || 'Sem nome') + '</strong>' +
