@@ -688,6 +688,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 
 .card {
+  position: relative;   /* âncora dos botões de ação no canto */
   background: var(--branco);
   border: 1px solid var(--borda);
   border-left: 3px solid var(--cor, var(--verde-500));
@@ -701,7 +702,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .card:active { cursor: grabbing; }
 .card.arrastando { opacity: .45; transform: rotate(1.5deg); }
 
-.card-topo { display: flex; align-items: center; gap: 8px; }
+.card-topo { display: flex; align-items: flex-start; gap: 8px; }
 .avatar {
   display: grid; place-items: center;
   flex: none;
@@ -712,10 +713,39 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .avatar-g { width: 46px; height: 46px; border-radius: 13px; font-size: 16px; }
 
 .card-identidade { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.card-identidade strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.card-identidade span { font-size: 11px; color: var(--texto-suave); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.card-acao { width: 26px; height: 26px; opacity: 0; }
-.card:hover .card-acao { opacity: 1; }
+
+/* O nome é a informação principal do card: quebra em linhas em vez de virar
+   "Ligia…". O ::before reserva o canto superior direito para os botões de ação:
+   só a primeira linha desvia deles, as de baixo usam a largura toda, e nada se
+   mexe de lugar quando os botões aparecem no hover. */
+.card-identidade strong {
+  font-size: 13.5px;
+  line-height: 1.3;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.card-identidade strong::before {
+  content: '';
+  float: right;
+  width: 46px;
+  height: 15px;
+}
+.card-identidade span {
+  font-size: 11px; color: var(--texto-suave);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Fora do fluxo: antes ocupavam ~52px da linha do nome mesmo invisíveis. Ficam
+   dentro do espaço reservado acima, sem cobrir a segunda linha do nome. */
+.card-acao {
+  position: absolute; top: 7px;
+  width: 22px; height: 22px;
+  opacity: 0;
+  background: var(--branco);
+}
+.card-acao[data-acao="zap"]   { right: 31px; }
+.card-acao[data-acao="adiar"] { right: 8px; }
+.card:hover .card-acao, .card-acao:focus-visible { opacity: 1; }
 
 .card-corpo { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; }
 .card-linha {
