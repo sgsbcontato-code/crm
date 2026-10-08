@@ -1275,7 +1275,8 @@ kbd {
 
 .etapa-linha {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
+  /* ordem · cor · nome · prazo · retomada · ocultar · remover */
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto auto auto;
   align-items: center;
   gap: 10px;
   padding: 9px 12px;
@@ -1351,6 +1352,15 @@ kbd {
 .etapa-linha .icone-btn[data-remover]:disabled:hover { background: none; color: var(--texto-suave); }
 
 .btn-nova-etapa { width: 100%; justify-content: center; margin-top: 10px; border-style: dashed; }
+
+/* Aviso do Kanban: etapa oculta continua existindo, com gente dentro. */
+.quadro-ocultas {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 0; padding: 10px 16px 14px;
+  font-size: 12px; color: var(--texto-suave);
+}
+.quadro-ocultas svg { flex: none; color: var(--verde-400); }
+.quadro-ocultas b { color: var(--texto); font-weight: 600; }
 
 /* detalhes */
 .detalhe-faixa-etapa { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
