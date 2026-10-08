@@ -77,21 +77,43 @@ const Kanban = (function () {
       '</section>';
   }
 
+  /* Aviso de rodapé: etapa oculta continua existindo, então o quadro precisa
+     dizer quanta gente está fora dele — senão o lead some sem explicação. */
+  function avisoOcultas(ocultas, porEtapa) {
+    if (!ocultas.length) return '';
+    const partes = ocultas.map(function (e) {
+      const quantos = (porEtapa[e.id] || []).length;
+      return UI.esc(e.nome) + (quantos ? ' (' + quantos + ')' : '');
+    });
+    return '<p class="quadro-ocultas">' + UI.ICONES.olhoCortado +
+      '<span>Fora do Kanban: <b>' + partes.join('</b> · <b>') + '</b>. ' +
+      'Esses leads continuam na Tabela e no Hoje.</span>' +
+      '<button type="button" class="link-secundario" data-abrir-etapas>Mostrar etapas</button></p>';
+  }
+
   function render(el, leads) {
     const etapas = DB.etapas();
+    const visiveis = etapas.filter(function (e) { return !e.oculta; });
+    const ocultas = etapas.filter(function (e) { return e.oculta; });
     const porEtapa = {};
     etapas.forEach(function (e) { porEtapa[e.id] = []; });
-    leads.forEach(function (lead) { (porEtapa[lead.etapa] || porEtapa[etapas[0].id]).push(lead); });
+    // Lead de etapa que não existe mais cai na primeira visível; o de etapa oculta
+    // fica guardado em porEtapa só para ser contado no aviso.
+    leads.forEach(function (lead) {
+      (porEtapa[lead.etapa] || porEtapa[visiveis[0].id]).push(lead);
+    });
 
     el.innerHTML = '<div class="quadro">' +
-      etapas.map(function (etapa) { return coluna(etapa, porEtapa[etapa.id]); }).join('') +
-      '</div>';
+      visiveis.map(function (etapa) { return coluna(etapa, porEtapa[etapa.id]); }).join('') +
+      '</div>' + avisoOcultas(ocultas, porEtapa);
   }
 
   // ------------------------------------------------------- arrastar e soltar
 
   function ligarEventos(el) {
     el.addEventListener('click', function (ev) {
+      // Atalho do aviso de etapas ocultas
+      if (ev.target.closest('[data-abrir-etapas]')) { App.abrirEtapas(); return; }
       // O prazo no topo da coluna leva direto à configuração de prazos.
       if (ev.target.closest('.coluna-prazo')) { App.abrirEtapas(); return; }
 

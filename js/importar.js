@@ -206,7 +206,9 @@ const Importar = (function () {
       lead.uf = paraUF(lead.uf);
 
       const etapaId = paraEtapa(lead.etapa);
-      lead.etapa = etapaId || DB.etapas()[0].id;
+      // Sem coluna "etapa" na planilha, entra na primeira que aparece no Kanban —
+      // cair numa etapa oculta deixaria o lead invisível logo ao importar.
+      lead.etapa = etapaId || (DB.etapasVisiveis()[0] || DB.etapas()[0]).id;
 
       const chaveTelefone = lead.telefone ? soDigitos(lead.telefone) : '';
       const chaveEmail = lead.email ? chave(lead.email) : '';

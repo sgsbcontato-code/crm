@@ -149,7 +149,9 @@ const App = (function () {
 
     const empresas = DB.empresas();
 
-    const opcoesEtapa = DB.etapas().map(function (e) { return { valor: e.id, rotulo: e.nome }; });
+    const opcoesEtapa = DB.etapas().map(function (e) {
+      return { valor: e.id, rotulo: e.nome + (e.oculta ? ' (fora do Kanban)' : '') };
+    });
     preencher(els.filtroEtapa, opcoesEtapa, 'Todas as etapas', estado.etapa);
     preencher(els.filtroEmpresa, empresas, 'Todas as empresas/origens', estado.empresa);
     preencher(els.filtroUf, ufs, 'Todas as UFs', estado.uf);
@@ -291,7 +293,9 @@ const App = (function () {
                      { placeholder: 'Escolha a UF para ver as cidades', lista: 'cidades-form',
                        sugestoes: lead.uf ? DB.cidadesDe(lead.uf) : [] }) +
           campoSelect('Etapa do funil', 'etapa', lead.etapa,
-                      DB.etapas().map(function (e) { return { valor: e.id, rotulo: e.nome }; })) +
+                      DB.etapas().map(function (e) {
+                        return { valor: e.id, rotulo: e.nome + (e.oculta ? ' (fora do Kanban)' : '') };
+                      })) +
           campoTexto('Nesta etapa desde', 'etapaDesde', lead.etapaDesde || lead.dataCriacao,
                      { tipo: 'date' }) +
           campoTexto('Próximo contato', 'proximoContato', lead.proximoContato,
@@ -515,7 +519,7 @@ const App = (function () {
           '<span>Mover para:</span>' +
           '<select name="etapa">' + DB.etapas().map(function (e) {
             return '<option value="' + UI.esc(e.id) + '"' + (e.id === lead.etapa ? ' selected' : '') +
-                   '>' + UI.esc(e.nome) + '</option>';
+                   '>' + UI.esc(e.nome) + (e.oculta ? ' (fora do Kanban)' : '') + '</option>';
           }).join('') + '</select>' +
         '</div>' +
 
@@ -1341,7 +1345,8 @@ const App = (function () {
           '<span class="etapa-info">' +
             (novaEtapa ? '<b class="etapa-nova">nova</b>' :
               quantos + (quantos === 1 ? ' lead' : ' leads') +
-              (atrasados ? ' · <b>' + atrasados + ' fora do prazo</b>' : '')) +
+              (atrasados ? ' · <b>' + atrasados + ' fora do prazo</b>' : '') +
+              (etapa.oculta ? ' · fora do Kanban' : '')) +
           '</span>' +
         '</div>' +
 
@@ -1354,6 +1359,12 @@ const App = (function () {
         '<label class="etapa-retomada" title="Ao mover um lead para cá, o app pergunta quando retomar o contato">' +
           '<input type="checkbox"' + (etapa.perguntarRetomada ? ' checked' : '') + ' data-retomada>' +
           '<span>perguntar retomada</span>' +
+        '</label>' +
+
+        '<label class="etapa-retomada" title="Tira a coluna do Kanban. Os leads continuam ' +
+          'existindo: aparecem na Tabela, no Hoje e nos filtros.">' +
+          '<input type="checkbox"' + (etapa.oculta ? ' checked' : '') + ' data-oculta>' +
+          '<span>ocultar no Kanban</span>' +
         '</label>' +
 
         '<button type="button" class="icone-btn perigo" data-remover ' +
@@ -1369,7 +1380,7 @@ const App = (function () {
       '<div class="form-etapas">' +
         '<header class="modal-topo">' +
           '<div><h2>Etapas do funil</h2>' +
-            '<p class="modal-subtitulo">Renomeie, reordene, crie e remova etapas. ' +
+            '<p class="modal-subtitulo">Renomeie, reordene, crie, oculte e remova etapas. ' +
               'O <b>prazo</b> é quantos dias alguém pode ficar parado ali antes de virar cobrança ' +
               '(0 = sem prazo). Só dá para remover etapa vazia.</p></div>' +
           '<button type="button" class="icone-btn" data-fechar title="Fechar">' + UI.ICONES.fechar + '</button>' +
@@ -1408,6 +1419,7 @@ const App = (function () {
           etapa.cor = linha.querySelector('[data-cor]').value;
           etapa.prazo = Number(linha.querySelector('[data-prazo]').value) || 0;
           etapa.perguntarRetomada = linha.querySelector('[data-retomada]').checked;
+          etapa.oculta = linha.querySelector('[data-oculta]').checked;
           // Etapa ainda não gravada: o id acompanha o nome que está sendo digitado
           if (!jaSalvas[etapa.id]) etapa.id = '';
         });

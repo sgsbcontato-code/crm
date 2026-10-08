@@ -148,7 +148,10 @@ const DB = (function () {
       cor: cor,
       fundo: clarear(cor, 0.87),
       prazo: isFinite(prazo) && prazo >= 0 ? Math.round(prazo) : 0,
-      perguntarRetomada: Boolean(bruta && bruta.perguntarRetomada)
+      perguntarRetomada: Boolean(bruta && bruta.perguntarRetomada),
+      // Oculta sai do Kanban, mas continua existindo: os leads de lá seguem na
+      // Tabela, no Hoje, nos filtros e no formulário.
+      oculta: Boolean(bruta && bruta.oculta)
     };
   }
 
@@ -452,6 +455,16 @@ const DB = (function () {
 
     nomeEtapa: function (id) { return this.etapa(id).nome; },
 
+    /** Só as etapas que aparecem como coluna no Kanban. */
+    etapasVisiveis: function () {
+      return this.etapas().filter(function (e) { return !e.oculta; });
+    },
+
+    /** As escondidas do Kanban — para o aviso de "tem gente aqui fora". */
+    etapasOcultas: function () {
+      return this.etapas().filter(function (e) { return e.oculta; });
+    },
+
     /** Quantos leads estão em cada etapa — usado pela tela de etapas. */
     contarPorEtapa: function () {
       const contagem = {};
@@ -476,6 +489,11 @@ const DB = (function () {
       if (perdidas.length) {
         return { ok: false, erro: 'A etapa "' + perdidas[0].nome + '" ainda tem lead. ' +
                                   'Mova quem está lá antes de remover.' };
+      }
+
+      // Kanban sem nenhuma coluna não serve para nada
+      if (!nova.some(function (e) { return !e.oculta; })) {
+        return { ok: false, erro: 'Pelo menos uma etapa precisa aparecer no Kanban.' };
       }
 
       etapas = nova;
